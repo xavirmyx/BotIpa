@@ -89,7 +89,7 @@ app.get('/', (req, res) => {
 // Iniciar el servidor
 app.listen(PORT, async () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
-  const host = process.env.REPLIT_APP_URL || process.env.RENDER_EXTERNAL_HOSTNAME || 'your-app-name.repl.co';
+  const host = process.env.RENDER_EXTERNAL_HOSTNAME || 'botipa.onrender.com';
   const webhookUrl = `https://${host}/${TOKEN}`;
   try {
     const response = await axios.get(`https://api.telegram.org/bot${TOKEN}/setWebhook?url=${webhookUrl}`);
