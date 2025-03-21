@@ -77,35 +77,46 @@ bot.onText(/\/ipa (.+)/, (msg, match) => {
 
   bot.sendMessage(chatId, 'Descargando el .ipa, espera un momento...');
 
-  // Descargar el .ipa usando ipatool
-  console.log(`[${new Date().toISOString()}] Ejecutando ipatool para descargar IPA con App ID: ${appId}`);
-  exec(`./ipatool download -i ${appId} --email "${APPLE_ID}" --password "${APPLE_PASSWORD}" -o ${appId}.ipa`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`[${new Date().toISOString()}] Error al ejecutar ipatool: ${stderr}`);
-      bot.sendMessage(chatId, `Error: ${stderr}`);
+  // Autenticarse con ipatool
+  console.log(`[${new Date().toISOString()}] Autenticando con ipatool...`);
+  exec(`./ipatool auth login --email "${APPLE_ID}" --password "${APPLE_PASSWORD}"`, (authError, authStdout, authStderr) => {
+    if (authError) {
+      console.error(`[${new Date().toISOString()}] Error al autenticar con ipatool: ${authStderr}`);
+      bot.sendMessage(chatId, `Error al autenticar con ipatool: ${authStderr}`);
       return;
     }
-    console.log(`[${new Date().toISOString()}] ipatool ejecutado con éxito. Salida: ${stdout}`);
+    console.log(`[${new Date().toISOString()}] Autenticación exitosa: ${authStdout}`);
 
-    // Enviar el archivo al usuario
-    const filePath = path.join(__dirname, `${appId}.ipa`);
-    if (fs.existsSync(filePath)) {
-      console.log(`[${new Date().toISOString()}] Archivo IPA generado: ${filePath}`);
-      bot.sendDocument(chatId, filePath, {}, { filename: `${appId}.ipa` })
-        .then(() => {
-          console.log(`[${new Date().toISOString()}] Archivo IPA enviado al chat ID: ${chatId}`);
-          // Limpiar el archivo después de enviarlo
-          fs.unlinkSync(filePath);
-          bot.sendMessage(chatId, '¡Listo! Aquí tienes tu .ipa.');
-        })
-        .catch((err) => {
-          console.error(`[${new Date().toISOString()}] Error al enviar el archivo: ${err.message}`);
-          bot.sendMessage(chatId, `Error al enviar el archivo: ${err.message}`);
-        });
-    } else {
-      console.error(`[${new Date().toISOString()}] Error: No se pudo generar el archivo IPA en ${filePath}`);
-      bot.sendMessage(chatId, 'Error: No se pudo generar el archivo .ipa.');
-    }
+    // Descargar el .ipa usando ipatool
+    console.log(`[${new Date().toISOString()}] Ejecutando ipatool para descargar IPA con App ID: ${appId}`);
+    exec(`./ipatool download -b ${appId} -o ${appId}.ipa`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`[${new Date().toISOString()}] Error al ejecutar ipatool: ${stderr}`);
+        bot.sendMessage(chatId, `Error: ${stderr}`);
+        return;
+      }
+      console.log(`[${new Date().toISOString()}] ipatool ejecutado con éxito. Salida: ${stdout}`);
+
+      // Enviar el archivo al usuario
+      const filePath = path.join(__dirname, `${appId}.ipa`);
+      if (fs.existsSync(filePath)) {
+        console.log(`[${new Date().toISOString()}] Archivo IPA generado: ${filePath}`);
+        bot.sendDocument(chatId, filePath, {}, { filename: `${appId}.ipa` })
+          .then(() => {
+            console.log(`[${new Date().toISOString()}] Archivo IPA enviado al chat ID: ${chatId}`);
+            // Limpiar el archivo después de enviarlo
+            fs.unlinkSync(filePath);
+            bot.sendMessage(chatId, '¡Listo! Aquí tienes tu .ipa.');
+          })
+          .catch((err) => {
+            console.error(`[${new Date().toISOString()}] Error al enviar el archivo: ${err.message}`);
+            bot.sendMessage(chatId, `Error al enviar el archivo: ${err.message}`);
+          });
+      } else {
+        console.error(`[${new Date().toISOString()}] Error: No se pudo generar el archivo IPA en ${filePath}`);
+        bot.sendMessage(chatId, 'Error: No se pudo generar el archivo .ipa.');
+      }
+    });
   });
 });
 
